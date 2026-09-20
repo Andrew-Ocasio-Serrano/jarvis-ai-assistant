@@ -149,10 +149,44 @@ See `docs/screenshots/` for the full build documentation, numbered
 
 ## Lessons Learned
 
-[TODO — finish once V1 is pushed to GitHub. Draft points to expand:
-naming/discovery conventions matter more than they seem (a single
-misnamed test file cost real debugging time); import-time side effects
-in Python can silently bypass your own error handling, and lazy
-initialization is the fix; verifying live API access against
-documentation, rather than trusting docs blindly, caught a real
-account-specific gap.]
+**Naming conventions aren't cosmetic — they're functional.** A single
+misnamed test file (`tests_client.py` instead of `test_client.py`) cost
+real debugging time, because pytest's auto-discovery silently found zero
+tests rather than erroring loudly. The lesson wasn't "be more careful" in
+the abstract — it was that tools like pytest, Git, and Python's import
+system all rely on exact naming conventions to function, and a small
+typo can produce a confusing *absence* of error rather than a clear one.
+
+**Import-time side effects can silently defeat your own error handling.**
+The Groq client was originally instantiated when `client.py` was
+imported, not when it was actually used. Because Python resolves imports
+before any of `main.py`'s own logic runs, a missing API key surfaced as
+a raw SDK traceback instead of the clean, intended error message —
+`validate_config()` never got the chance to run first. The fix (lazy
+initialization — build the client on first use, not on import) is a
+pattern I'll now apply by default in any project where setup validation
+needs to happen before a dependency touches the network.
+
+**Documentation can be wrong about what you actually have access to.**
+Groq's own docs listed `llama-3.3-70b-versatile` as a current production
+model, but my account's free-tier access didn't include it — the API
+returned a 404 that had nothing to do with a typo or a deprecated model.
+Querying the `/models` endpoint directly, rather than trusting the
+documentation, was the only way to get a ground-truth answer. That's a
+habit worth keeping generally: verify against the live system, especially
+when a "should work" assumption doesn't match reality.
+
+**Separating concerns early pays off exactly when you don't expect it
+to.** Splitting `client.py`, `cli.py`, and `settings.py` by responsibility
+felt like over-engineering for a V1 this small — until the provider
+pivot from Anthropic to Groq required changing exactly one file. The
+architecture decision was validated by a real event, not just a
+principle I'd read about.
+
+**Credential and environment friction is a real part of the job, not a
+distraction from it.** Between a stray admin-elevated terminal, a
+Notepad-added `.txt` extension on `.env`, and Git authenticating as the
+wrong cached GitHub account, most of the actual time on this project
+went into environment and tooling issues rather than application logic.
+That's a realistic preview of IT/security work generally — the code is
+often the easy part.
