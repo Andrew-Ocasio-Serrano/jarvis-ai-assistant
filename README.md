@@ -41,13 +41,13 @@ The client, settings, and CLI logic are deliberately separated by
 responsibility (separation of concerns), so a change to one layer doesn't
 cascade through the others. This was validated twice during V1's build:
 the project originally targeted the Anthropic API and switched to Groq
-mid-build after evaluating cost tradeoffs — the swap required changing
+mid-build after evaluating cost tradeoffs, the swap required changing
 only `client.py`, with zero changes to `cli.py` or `main.py`.
 
 A second, more important architectural lesson came from a real bug:
 the Groq client was originally constructed at module-import time. Because
 `main.py` imports `app.cli`, which imports `app.client`, the client was
-being built — and failing on a missing API key — before `main.py`'s own
+being built and failing on a missing API key, before `main.py`'s own
 `validate_config()` check ever ran. The result was a raw SDK traceback
 instead of the intended clean error message. Fixed via lazy
 initialization: the client is now built on first use inside
@@ -65,7 +65,7 @@ first. This is documented in more detail in `docs/CHANGELOG.md`.
 | Git / GitHub | Version control, portfolio |
 
 **Why Groq:** originally built against the Anthropic API, switched after
-evaluating cost for a low-volume prototype — Groq's free tier removed
+evaluating cost for a low-volume prototype, Groq's free tier removed
 billing risk entirely for V1's scope, with no functional downside.
 
 **Why `openai/gpt-oss-20b`:** initial model selection (Llama 3.x) returned
@@ -128,7 +128,7 @@ See `docs/screenshots/` for the full build documentation, numbered
 
 ## Limitations
 
-- No memory — each session is stateless
+- No memory, each session is stateless
 - No external integrations, no tool-calling
 - No system prompt constraining response behavior — during functional
   testing, an ambiguous long-form input (a narrative paragraph) caused
@@ -149,7 +149,7 @@ See `docs/screenshots/` for the full build documentation, numbered
 
 ## Lessons Learned
 
-**Naming conventions aren't cosmetic — they're functional.** A single
+**Naming conventions aren't cosmetic, they're functional.** A single
 misnamed test file (`tests_client.py` instead of `test_client.py`) cost
 real debugging time, because pytest's auto-discovery silently found zero
 tests rather than erroring loudly. The lesson wasn't "be more careful" in
@@ -178,7 +178,7 @@ when a "should work" assumption doesn't match reality.
 
 **Separating concerns early pays off exactly when you don't expect it
 to.** Splitting `client.py`, `cli.py`, and `settings.py` by responsibility
-felt like over-engineering for a V1 this small — until the provider
+felt like over-engineering for a V1 this small, until the provider
 pivot from Anthropic to Groq required changing exactly one file. The
 architecture decision was validated by a real event, not just a
 principle I'd read about.
